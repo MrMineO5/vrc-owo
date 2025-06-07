@@ -19,8 +19,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Ensure target is installed
-      run: rustup target add ${{ matrix.BUILD_TARGET }}
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mingw-w64
+        rustup target add ${{ matrix.BUILD_TARGET }}
     - name: Build
       run: cargo build --release --target ${{ matrix.BUILD_TARGET }}
     - name: Get version
