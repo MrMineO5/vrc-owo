@@ -1,0 +1,224 @@
+import { Button, VerticalBox, HorizontalBox, Slider, GridBox } from "std-widgets.slint";
+
+struct MuscleIntensities {
+    touch: int,
+    impact: int,
+    stab: int,
+}
+
+struct MuscleData {
+    name: string,
+    intensities: MuscleIntensities,
+}
+
+component MuscleComponent {
+    in-out property <[MuscleData]> muscles;
+    in property <int> index;
+    callback update();
+
+    Rectangle {
+        height: 120px;
+        border-radius: 8px;
+        // margin: 8px;
+        padding: 8px;
+
+        VerticalBox {
+            Text {
+                text: muscles[index].name;
+                font-size: 16px;
+                font-weight: 700;
+            }
+
+            HorizontalBox {
+                height: 24px;
+                Text {
+                    text: "Touch:";
+                    width: 60px;
+                    vertical-alignment: center;
+                }
+                Slider {
+                    width: 200px;
+                    value: muscles[index].intensities.touch;
+                    minimum: 0;
+                    maximum: 100;
+                    changed() => {
+                        muscles[index].intensities.touch = self.value;
+                        update();
+                    }
+                }
+                Text {
+                    text: muscles[index].intensities.touch;
+                    width: 40px;
+                    vertical-alignment: center;
+                }
+            }
+
+            HorizontalBox {
+                height: 24px;
+                Text {
+                    text: "Impact:";
+                    width: 60px;
+                    vertical-alignment: center;
+                }
+                Slider {
+                    value: muscles[index].intensities.impact;
+                    minimum: 0;
+                    maximum: 100;
+                    changed(value) => {
+                        muscles[index].intensities.impact = value;
+                        update();
+                    }
+                }
+                Text {
+                    text: muscles[index].intensities.impact;
+                    width: 40px;
+                    vertical-alignment: center;
+                }
+            }
+
+            HorizontalBox {
+                height: 24px;
+                Text {
+                    text: "Stab:";
+                    width: 60px;
+                    vertical-alignment: center;
+                }
+                Slider {
+                    value: muscles[index].intensities.stab;
+                    minimum: 0;
+                    maximum: 100;
+                    changed(value) => {
+                        muscles[index].intensities.stab = value;
+                        update();
+                    }
+                }
+                Text {
+                    text: muscles[index].intensities.stab;
+                    width: 40px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}
+
+export component App inherits Window {
+    callback update();
+    callback connect();
+
+    in-out property <[MuscleData]> muscles: [
+        { name: "Pectoral_R", intensities: { touch: 20, impact: 60, stab: 100 } },
+        { name: "Pectoral_L", intensities: { touch: 20, impact: 60, stab: 100 } },
+        { name: "Abdominal_R", intensities: { touch: 15, impact: 50, stab: 100 } },
+        { name: "Abdominal_L", intensities: { touch: 15, impact: 50, stab: 100 } },
+        { name: "Arm_R", intensities: { touch: 15, impact: 30, stab: 80 } },
+        { name: "Arm_L", intensities: { touch: 15, impact: 30, stab: 80 } },
+        { name: "Dorsal_R", intensities: { touch: 15, impact: 50, stab: 100 } },
+        { name: "Dorsal_L", intensities: { touch: 15, impact: 50, stab: 100 } },
+        { name: "Lumbar_R", intensities: { touch: 20, impact: 60, stab: 100 } },
+        { name: "Lumbar_L", intensities: { touch: 20, impact: 60, stab: 100 } }
+    ];
+
+    title: "OWO Pro Controller";
+
+    VerticalLayout {
+        HorizontalBox {
+            Text {
+                text: "OWO Pro Controller";
+                font-size: 24px;
+                horizontal-alignment: center;
+                height: 30px;
+            }
+
+            Button {
+                text: "Connect";
+                clicked() => {
+                    connect();
+                }
+            }
+        }
+
+        GridBox {
+            Row {
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 1;
+                    update() => {
+                        update();
+                    }
+                }
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 0;
+                    update() => {
+                        update();
+                    }
+                }
+            }
+            Row {
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 3;
+                    update() => {
+                        update();
+                    }
+                }
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 2;
+                    update() => {
+                        update();
+                    }
+                }
+            }
+            Row {
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 5;
+                    update() => {
+                        update();
+                    }
+                }
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 4;
+                    update() => {
+                        update();
+                    }
+                }
+            }
+            Row {
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 7;
+                    update() => {
+                        update();
+                    }
+                }
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 6;
+                    update() => {
+                        update();
+                    }
+                }
+            }
+            Row {
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 9;
+                    update() => {
+                        update();
+                    }
+                }
+                MuscleComponent {
+                    muscles <=> muscles;
+                    index: 8;
+                    update() => {
+                        update();
+                    }
+                }
+            }
+        }
+    }
+} 
