@@ -1,6 +1,13 @@
 # vrc-owo
 OWO vest integration for VRChat
 
+## Features
+- Depth-dependent intensity
+- Impact sensation for high velocities (can be disabled in the radial menu)
+- Blade contact for various sword/dagger assets
+
+If you have ideas for further improvements, feel free to let me know in an issue
+
 ## Installation
 1. Download [vrc-owo.unitypackage](https://raw.githubusercontent.com/MrMineO5/vrc-owo/refs/heads/main/vrc-owo.unitypackage)
 2. Drag-and-drop into your unity project (Aklternatively, Assets > Import Package > Custom Package...)
