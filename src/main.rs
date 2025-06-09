@@ -165,7 +165,7 @@ fn main() -> std::io::Result<()> {
 
     // Create a HashMap to store contact states
     let contact_states = Arc::new(Mutex::new(HashMap::new()));
-    let needs_connect = Arc::new(Mutex::new(false));
+    let needs_connect = Arc::new(Mutex::new(true));
     let toggle_states = Arc::new(Mutex::new(HashMap::<String, bool>::new()));
     
     // Initialize all supported parameters to false
@@ -184,19 +184,16 @@ fn main() -> std::io::Result<()> {
     let muscle_mappings_clone = muscle_mappings.clone();
     thread::spawn(move || {
         let client = Client::new(GameAuth::default());
-        client.auto_connect();
-
-        println!("Connected to OWO Pro");
-
+        
         let mut i = 0;
         loop {
             {
                 let mut needs_connect = needs_connect_clone.lock().unwrap();
                 if *needs_connect {
-                    println!("Connecting to OWO Pro");
+                    println!("Connecting to OWO Application");
                     client.auto_connect();
                     *needs_connect = false;
-                    println!("Connected to OWO Pro");
+                    println!("Connected to OWO Application");
                 }
 
                 // Create a list of active muscles
