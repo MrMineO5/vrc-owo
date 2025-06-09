@@ -141,7 +141,7 @@ fn main() -> std::io::Result<()> {
     fn get_intensity(parameter: &str, state: &MuscleState, mappings: &[(&str, Muscle, u8, u8, u8); 10]) -> Option<u8> {
         mappings.iter()
                 .find(|(param, _, _, _, _)| *param == parameter)
-                .map(|(_, muscle, intensity_touch, intensity_impact, intensity_stab)| {
+                .map(|(_, _, intensity_touch, intensity_impact, intensity_stab)| {
                     let intensity = match state.interaction_type {
                         InteractionType::Touch => *intensity_touch as f32 * state.depth,
                         InteractionType::Impact => *intensity_impact as f32 * state.velocity / 5.0,
@@ -182,6 +182,7 @@ fn main() -> std::io::Result<()> {
     let contact_states_clone = Arc::clone(&contact_states);
     let needs_connect_clone = Arc::clone(&needs_connect);
     let muscle_mappings_clone = muscle_mappings.clone();
+    let toggle_states_clone = Arc::clone(&toggle_states);
     thread::spawn(move || {
         let client = Client::new(GameAuth::default());
         
@@ -218,8 +219,9 @@ fn main() -> std::io::Result<()> {
                         highest_intensity = max(highest_intensity, intensity);
                     }
                 });
-                if (priority_type != InteractionType::Touch) {
-                    states.iter_mut().for_each(|(param, state)| {
+                if priority_type != InteractionType::Touch {
+                    // Reset all states to touch
+                    states.iter_mut().for_each(|(_, state)| {
                         state.interaction_type = InteractionType::Touch;
                         state.velocity = 0.0;
                     });
@@ -234,7 +236,9 @@ fn main() -> std::io::Result<()> {
 
                 i += 1;
                 if !active_muscles.is_empty() {
-                    if i % SEND_INTERVAL == 0 || priority_type != InteractionType::Touch {
+                    let toggle_states = toggle_states_clone.lock().unwrap();
+                    let enabled = toggle_states.get("chatbox").unwrap_or(&false);
+                    if *enabled && (i % SEND_INTERVAL == 0 || priority_type != InteractionType::Touch) {
                         let message = format!("Type: {:#?}\nActive muscles: {}\nIntensity: {}", priority_type, active_muscles.len(), highest_intensity);
                         println!("{}", message);
 
@@ -272,7 +276,19 @@ fn main() -> std::io::Result<()> {
                                     if !msg.addr.starts_with(PREFIX) {
                                         continue;
                                     }
-                                    let (muscle, parameter) = msg.addr[PREFIX.len()..].split_once('/').unwrap();
+
+                                    let param = &msg.addr[PREFIX.len()..];
+
+                                    if param.starts_with("toggle/") {
+                                        let (_, toggle_type) = param.split_once('/').unwrap();
+                                        let mut toggle_states = toggle_states_clone.lock().unwrap();
+                                        if let OscType::Bool(state) = value {
+                                            toggle_states.insert(toggle_type.to_string(), *state);
+                                        }
+                                        continue;
+                                    }
+
+                                    let (muscle, parameter) = param.split_once('/').unwrap();
 
                                     if parameter == "depth" {
                                         if let OscType::Float(depth) = value {
@@ -287,7 +303,7 @@ fn main() -> std::io::Result<()> {
 
                                     if parameter.starts_with("velocity/") {
                                         let toggle_states = toggle_states_clone.lock().unwrap();
-                                        let enabled = toggle_states.get("velocity").unwrap_or(&true);
+                                        let enabled = toggle_states.get("velocity").unwrap_or(&false);
                                         if !*enabled {
                                             continue;
                                         }
@@ -311,6 +327,12 @@ fn main() -> std::io::Result<()> {
 
                                     if parameter.starts_with("type/") {
                                         let (_, contact_type) = parameter.split_once('/').unwrap();
+                                        let toggle_states = toggle_states_clone.lock().unwrap();
+                                        let enabled = toggle_states.get(contact_type).unwrap_or(&false);
+                                        if !*enabled {
+                                            continue;
+                                        }
+
                                         match contact_type {
                                             "blade" => {
                                                 let mut states = contact_states_clone.lock().unwrap();
@@ -323,28 +345,6 @@ fn main() -> std::io::Result<()> {
                                             }
                                         }
                                     }
-
-                                    if parameter.starts_with("toggle/") {
-                                        let (_, toggle_type) = parameter.split_once('/').unwrap();
-                                        let mut toggle_states = toggle_states_clone.lock().unwrap();
-                                        if let OscType::Bool(state) = value {
-                                            toggle_states.insert(toggle_type.to_string(), *state);
-                                            println!("Toggled {} to {}", toggle_type, *state);
-                                        } else {
-                                            println!("Received non-bool value for toggle: {}", value);
-                                        }
-                                    }
-                                    if parameter == "velocity" {
-                                        let mut toggle_states = toggle_states_clone.lock().unwrap();
-                                        if let OscType::Bool(state) = value {
-                                            toggle_states.insert("velocity".to_string(), *state);
-                                            println!("Toggled velocity to {}", *state);
-                                        } else {
-                                            println!("Received non-bool value for velocity: {}", value);
-                                        }
-                                    }
-
-                                    // println!("parameter: {}", parameter);
                                 }
                             }
                         }
@@ -363,7 +363,7 @@ fn main() -> std::io::Result<()> {
     let app = App::new().unwrap();
     {
         let mappings = muscle_mappings.lock().unwrap();
-        app.set_muscles(mappings.iter().map(|(name, muscle, intensity_touch, intensity_impact, intensity_stab)| {
+        app.set_muscles(mappings.iter().map(|(name, _, intensity_touch, intensity_impact, intensity_stab)| {
             MuscleData {
                 name: name.to_string().into(),
                 intensities: MuscleIntensities {
