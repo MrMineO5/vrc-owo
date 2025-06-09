@@ -29,6 +29,15 @@ jobs:
         tag_name: ${{ github.ref }}
       env:
         GITHUB_TOKEN: ${{ github.token }}
+    - name: Upload unitypackage
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./vrc-owo.unitypackage
+        asset_name: vrc-owo.unitypackage
+        asset_content_type: application/octet-stream
 
   build:
     needs: create-release
@@ -52,6 +61,6 @@ jobs:
       with:
         upload_url: ${{ needs.create-release.outputs.upload_url }}
         asset_path: ./target/${{ matrix.BUILD_TARGET }}/release/vrc-owo${{ matrix.BUILD_TARGET == 'x86_64-pc-windows-gnu' && '.exe' || '' }}
-        asset_name: vrc-owo${{ matrix.BUILD_TARGET == 'x86_64-pc-windows-gnu' && '.exe' || '' }}
+        asset_name: vrc-owo-${{ matrix.BUILD_TARGET }}${{ matrix.BUILD_TARGET == 'x86_64-pc-windows-gnu' && '.exe' || '' }}
         asset_content_type: application/octet-stream
 
