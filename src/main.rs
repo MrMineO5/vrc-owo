@@ -179,22 +179,24 @@ fn main() -> std::io::Result<()> {
     let mut buf = [0u8; 1024];
 
     // Spawn a thread to handle periodic sensation sending
-    let contact_states_clone = Arc::clone(&contact_states);
-    let needs_connect_clone = Arc::clone(&needs_connect);
+    let contact_states_clone = contact_states.clone();
+    let needs_connect_clone = needs_connect.clone();
     let muscle_mappings_clone = muscle_mappings.clone();
-    let toggle_states_clone = Arc::clone(&toggle_states);
+    let toggle_states_clone = toggle_states.clone();
     thread::spawn(move || {
         let client = Client::new(GameAuth::default());
         
         let mut i = 0;
         loop {
             {
-                let mut needs_connect = needs_connect_clone.lock().unwrap();
-                if *needs_connect {
-                    println!("Connecting to OWO Application");
-                    client.auto_connect();
-                    *needs_connect = false;
-                    println!("Connected to OWO Application");
+                {
+                    let mut needs_connect = needs_connect_clone.lock().unwrap();
+                    if *needs_connect {
+                        println!("Connecting to OWO Application");
+                        client.auto_connect();
+                        *needs_connect = false;
+                        println!("Connected to OWO Application");
+                    }
                 }
 
                 // Create a list of active muscles
@@ -258,7 +260,7 @@ fn main() -> std::io::Result<()> {
                 } */
             }
 
-            thread::sleep(Duration::from_millis(300));
+            thread::sleep(Duration::from_millis(250));
         }
     });
 

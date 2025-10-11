@@ -33,7 +33,7 @@ Note: Changes to collision tags and parameter name are not applied
 
 
 ## Usage
-1. Download the latest release for your platform
+1. Download the application for your platform from the [Latest Release](https://github.com/MrMineO5/vrc-owo/releases/latest)
 2. Run the application
 3. Ensure you have OSC enabled in VRChat
 
