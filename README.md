@@ -10,7 +10,7 @@ If you have ideas for further improvements, feel free to let me know in an issue
 
 ## Installation
 1. Download [vrc-owo.unitypackage](https://raw.githubusercontent.com/MrMineO5/vrc-owo/refs/heads/main/vrc-owo.unitypackage)
-2. Drag-and-drop into your unity project (Aklternatively, Assets > Import Package > Custom Package...)
+2. Drag-and-drop into your unity project (Alternatively, Assets > Import Package > Custom Package...)
 3. Find the prefab in `Assets/UltraDev/OWOPro/OWOPro.prefab`
 
 ![Prefab Location](images/Prefab.png)
