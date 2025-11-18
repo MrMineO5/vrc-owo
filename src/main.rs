@@ -13,6 +13,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
+use vrc_oscquery::server::OscQueryServerBuilder;
 
 slint::include_modules!();
 
@@ -107,7 +108,8 @@ impl MuscleState {
 
 const SEND_INTERVAL: u64 = 10;
 
-fn main() -> std::io::Result<()> {
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     let muscle_mappings: Arc<Mutex<[(&str, Muscle, u8, u8, u8); 10]>> = Arc::new(Mutex::new(
         if let Some(config) = load_config() {
             let mut mappings = default_muscle_mappings();
@@ -159,9 +161,15 @@ fn main() -> std::io::Result<()> {
     }
 
     // Create a UDP socket to listen for OSC messages
-    let socket = UdpSocket::bind("127.0.0.1:9001")?;
+    let socket = UdpSocket::bind("127.0.0.1:0")?;
     let send_socket = UdpSocket::bind("0.0.0.0:0")?;
-    println!("Listening for OSC messages on 127.0.0.1:9001");
+    println!("Listening for OSC messages on 127.0.0.1:{}", socket.local_addr()?.port());
+
+    OscQueryServerBuilder::new("OWOPro", socket.local_addr()?.port())
+        .with_vrchat_avatar_receiver()
+        .build_and_run()
+        .await
+        .unwrap();
 
     // Create a HashMap to store contact states
     let contact_states = Arc::new(Mutex::new(HashMap::new()));
