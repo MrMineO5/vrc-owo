@@ -13,7 +13,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use vrc_oscquery::server::OscQueryServerBuilder;
+use vrchat_osc::models::OscRootNode;
+use vrchat_osc::VRChatOSC;
 
 slint::include_modules!();
 
@@ -161,15 +162,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Create a UDP socket to listen for OSC messages
-    let socket = UdpSocket::bind("127.0.0.1:0")?;
     let send_socket = UdpSocket::bind("0.0.0.0:0")?;
-    println!("Listening for OSC messages on 127.0.0.1:{}", socket.local_addr()?.port());
-
-    OscQueryServerBuilder::new("OWOPro", socket.local_addr()?.port())
-        .with_vrchat_avatar_receiver()
-        .build_and_run()
-        .await
-        .unwrap();
 
     // Create a HashMap to store contact states
     let contact_states = Arc::new(Mutex::new(HashMap::new()));
@@ -275,99 +268,91 @@ async fn main() -> std::io::Result<()> {
     // Spawn a thread to handle OSC messages
     let contact_states_clone: Arc<Mutex<HashMap<String, MuscleState>>> = Arc::clone(&contact_states);
     let toggle_states_clone: Arc<Mutex<HashMap<String, bool>>> = Arc::clone(&toggle_states);
-    thread::spawn(move || {
-        loop {
-            match socket.recv_from(&mut buf) {
-                Ok((size, _addr)) => {
-                    match rosc::decoder::decode_udp(&buf[..size]) {
-                        Ok((_, packet)) => {
-                            if let OscPacket::Message(msg) = packet {
-                                if let Some(value) = msg.args.get(0) {
-                                    if !msg.addr.starts_with(PREFIX) {
-                                        continue;
+
+    let vrchat_osc = VRChatOSC::new().await.unwrap();
+
+    let root_node = OscRootNode::new().with_avatar();
+    vrchat_osc
+        .register("owo_pro", root_node, move |packet| {
+            if let OscPacket::Message(msg) = packet {
+                if let Some(value) = msg.args.get(0) {
+                    if !msg.addr.starts_with(PREFIX) {
+                        return;
+                    }
+
+                    let param = &msg.addr[PREFIX.len()..];
+
+                    if param.starts_with("toggle/") {
+                        let (_, toggle_type) = param.split_once('/').unwrap();
+                        let mut toggle_states = toggle_states_clone.lock().unwrap();
+                        if let OscType::Bool(state) = value {
+                            toggle_states.insert(toggle_type.to_string(), *state);
+                            println!("Set toggle '{}' to {}", toggle_type, state);
+                        }
+                        return;
+                    }
+
+                    let (muscle, parameter) = param.split_once('/').unwrap();
+
+                    if parameter == "depth" {
+                        if let OscType::Float(depth) = value {
+                            let mut states = contact_states_clone.lock().unwrap();
+                            if let Some(current_state) = states.get_mut(muscle) {
+                                current_state.depth = *depth;
+                            }
+                        } else {
+                            println!("Received non-float value for depth: {}", value);
+                        }
+                    }
+
+                    if parameter.starts_with("velocity/") {
+                        let toggle_states = toggle_states_clone.lock().unwrap();
+                        let enabled = toggle_states.get("velocity").unwrap_or(&false);
+                        if !*enabled {
+                            return;
+                        }
+
+                        let velocity = parameter[9..].parse::<f32>().unwrap();
+                        if let OscType::Bool(state) = value {
+                            let mut states = contact_states_clone.lock().unwrap();
+                            if let Some(current_state) = states.get_mut(muscle) {
+                                if *state {
+                                    if current_state.velocity < velocity {
+                                        current_state.velocity = velocity;
                                     }
-
-                                    let param = &msg.addr[PREFIX.len()..];
-
-                                    if param.starts_with("toggle/") {
-                                        let (_, toggle_type) = param.split_once('/').unwrap();
-                                        let mut toggle_states = toggle_states_clone.lock().unwrap();
-                                        if let OscType::Bool(state) = value {
-                                            toggle_states.insert(toggle_type.to_string(), *state);
-                                        }
-                                        continue;
-                                    }
-
-                                    let (muscle, parameter) = param.split_once('/').unwrap();
-
-                                    if parameter == "depth" {
-                                        if let OscType::Float(depth) = value {
-                                            let mut states = contact_states_clone.lock().unwrap();
-                                            if let Some(current_state) = states.get_mut(muscle) {
-                                                current_state.depth = *depth;
-                                            }
-                                        } else {
-                                            println!("Received non-float value for depth: {}", value);
-                                        }
-                                    }
-
-                                    if parameter.starts_with("velocity/") {
-                                        let toggle_states = toggle_states_clone.lock().unwrap();
-                                        let enabled = toggle_states.get("velocity").unwrap_or(&false);
-                                        if !*enabled {
-                                            continue;
-                                        }
-
-                                        let velocity = parameter[9..].parse::<f32>().unwrap();
-                                        if let OscType::Bool(state) = value {
-                                            let mut states = contact_states_clone.lock().unwrap();
-                                            if let Some(current_state) = states.get_mut(muscle) {
-                                                if *state {
-                                                    if current_state.velocity < velocity {
-                                                        current_state.velocity = velocity;
-                                                    }
-                                                } else if current_state.interaction_type != InteractionType::Impact && current_state.velocity > 0.0 {
-                                                    current_state.interaction_type = InteractionType::Impact;
-                                                }
-                                            }
-                                        } else {
-                                            println!("Received non-bool value for velocity: {}", value);
-                                        }
-                                    }
-
-                                    if parameter.starts_with("type/") {
-                                        let (_, contact_type) = parameter.split_once('/').unwrap();
-                                        let toggle_states = toggle_states_clone.lock().unwrap();
-                                        let enabled = toggle_states.get(contact_type).unwrap_or(&false);
-                                        if !*enabled {
-                                            continue;
-                                        }
-
-                                        match contact_type {
-                                            "blade" => {
-                                                let mut states = contact_states_clone.lock().unwrap();
-                                                if let Some(current_state) = states.get_mut(muscle) {
-                                                    current_state.interaction_type = InteractionType::Stab;
-                                                }
-                                            }
-                                            _ => {
-                                                println!("Received unknown contact type: {}", contact_type);
-                                            }
-                                        }
-                                    }
+                                } else if current_state.interaction_type != InteractionType::Impact && current_state.velocity > 0.0 {
+                                    current_state.interaction_type = InteractionType::Impact;
                                 }
                             }
+                        } else {
+                            println!("Received non-bool value for velocity: {}", value);
                         }
-                        Err(e) => println!("Error decoding OSC packet: {}", e),
+                    }
+
+                    if parameter.starts_with("type/") {
+                        let (_, contact_type) = parameter.split_once('/').unwrap();
+                        let toggle_states = toggle_states_clone.lock().unwrap();
+                        let enabled = toggle_states.get(contact_type).unwrap_or(&false);
+                        if !*enabled {
+                            return;
+                        }
+
+                        match contact_type {
+                            "blade" => {
+                                let mut states = contact_states_clone.lock().unwrap();
+                                if let Some(current_state) = states.get_mut(muscle) {
+                                    current_state.interaction_type = InteractionType::Stab;
+                                }
+                            }
+                            _ => {
+                                println!("Received unknown contact type: {}", contact_type);
+                            }
+                        }
                     }
                 }
-                Err(e) => {
-                    println!("Error receiving from socket: {}", e);
-                    break;
-                }
             }
-        }
-    });
+        })
+        .await.unwrap();
 
     // Start the UI
     let app = App::new().unwrap();
