@@ -177,8 +177,6 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    let mut buf = [0u8; 1024];
-
     // Spawn a thread to handle periodic sensation sending
     let contact_states_clone = contact_states.clone();
     let needs_connect_clone = needs_connect.clone();
