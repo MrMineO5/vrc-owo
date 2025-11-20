@@ -34,8 +34,10 @@ component MuscleComponent {
                 Text {
                     text: "Touch:";
                     width: 60px;
+                    font-size: 14px;
                     vertical-alignment: center;
                 }
+
                 Slider {
                     width: 200px;
                     value: muscles[index].intensities.touch;
@@ -46,9 +48,11 @@ component MuscleComponent {
                         update();
                     }
                 }
+
                 Text {
                     text: muscles[index].intensities.touch;
                     width: 40px;
+                    font-size: 14px;
                     vertical-alignment: center;
                 }
             }
@@ -58,8 +62,10 @@ component MuscleComponent {
                 Text {
                     text: "Impact:";
                     width: 60px;
+                    font-size: 14px;
                     vertical-alignment: center;
                 }
+
                 Slider {
                     value: muscles[index].intensities.impact;
                     minimum: 0;
@@ -69,9 +75,11 @@ component MuscleComponent {
                         update();
                     }
                 }
+
                 Text {
                     text: muscles[index].intensities.impact;
                     width: 40px;
+                    font-size: 14px;
                     vertical-alignment: center;
                 }
             }
@@ -81,8 +89,10 @@ component MuscleComponent {
                 Text {
                     text: "Stab:";
                     width: 60px;
+                    font-size: 14px;
                     vertical-alignment: center;
                 }
+
                 Slider {
                     value: muscles[index].intensities.stab;
                     minimum: 0;
@@ -92,9 +102,11 @@ component MuscleComponent {
                         update();
                     }
                 }
+
                 Text {
                     text: muscles[index].intensities.stab;
                     width: 40px;
+                    font-size: 14px;
                     vertical-alignment: center;
                 }
             }
@@ -147,6 +159,7 @@ export component App inherits Window {
                         update();
                     }
                 }
+
                 MuscleComponent {
                     muscles <=> muscles;
                     index: 0;
@@ -155,6 +168,7 @@ export component App inherits Window {
                     }
                 }
             }
+
             Row {
                 MuscleComponent {
                     muscles <=> muscles;
@@ -163,6 +177,7 @@ export component App inherits Window {
                         update();
                     }
                 }
+
                 MuscleComponent {
                     muscles <=> muscles;
                     index: 2;
@@ -171,6 +186,7 @@ export component App inherits Window {
                     }
                 }
             }
+
             Row {
                 MuscleComponent {
                     muscles <=> muscles;
@@ -179,6 +195,7 @@ export component App inherits Window {
                         update();
                     }
                 }
+
                 MuscleComponent {
                     muscles <=> muscles;
                     index: 4;
@@ -187,6 +204,7 @@ export component App inherits Window {
                     }
                 }
             }
+
             Row {
                 MuscleComponent {
                     muscles <=> muscles;
@@ -195,6 +213,7 @@ export component App inherits Window {
                         update();
                     }
                 }
+
                 MuscleComponent {
                     muscles <=> muscles;
                     index: 6;
@@ -203,6 +222,7 @@ export component App inherits Window {
                     }
                 }
             }
+
             Row {
                 MuscleComponent {
                     muscles <=> muscles;
@@ -211,6 +231,7 @@ export component App inherits Window {
                         update();
                     }
                 }
+
                 MuscleComponent {
                     muscles <=> muscles;
                     index: 8;
@@ -221,4 +242,4 @@ export component App inherits Window {
             }
         }
     }
-} 
+}
