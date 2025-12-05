@@ -1,4 +1,4 @@
-import { Button, VerticalBox, HorizontalBox, Slider, GridBox, CheckBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, Slider, GridBox, CheckBox, LineEdit } from "std-widgets.slint";
 
 struct MuscleIntensities {
     touch: int,
@@ -123,6 +123,8 @@ component MuscleComponent {
 export component App inherits Window {
     callback update();
     callback connect();
+    callback connect-ip(string);
+    in-out property <string> ip-address: "127.0.0.1";
 
     in-out property <[MuscleData]> muscles: [
         { name: "Pectoral_R", intensities: { touch: 20, impact: 60, stab: 100 } },
@@ -149,8 +151,21 @@ export component App inherits Window {
                 height: 30px;
             }
 
+            LineEdit {
+                placeholder-text: "IP Address";
+                text <=> ip-address;
+                width: 150px;
+            }
+
             Button {
                 text: "Connect";
+                clicked() => {
+                    connect-ip(ip-address);
+                }
+            }
+
+            Button {
+                text: "Auto Connect";
                 clicked() => {
                     connect();
                 }
