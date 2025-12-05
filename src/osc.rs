@@ -12,7 +12,7 @@ pub const SEND_INTERVAL: u64 = 10;
 pub async fn setup_osc_listener(
     contact_states: Arc<Mutex<HashMap<String, MuscleState>>>,
     toggle_states: Arc<Mutex<HashMap<String, bool>>>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Arc<VRChatOSC>, Box<dyn std::error::Error>> {
     let vrchat_osc = VRChatOSC::new().await?;
 
     let root_node = OscRootNode::new().with_avatar();
@@ -122,7 +122,7 @@ pub async fn setup_osc_listener(
         toggle_states.insert(toggle.to_string(), state);
     }
 
-    Ok(())
+    Ok(vrchat_osc)
 }
 
 pub fn create_send_socket() -> std::io::Result<UdpSocket> {

@@ -62,7 +62,7 @@ async fn main() -> std::io::Result<()> {
     );
 
     // Setup OSC listener
-    setup_osc_listener(contact_states.clone(), toggle_states.clone())
+    let _vrcchat_osc = setup_osc_listener(contact_states.clone(), toggle_states.clone())
         .await
         .unwrap();
 
