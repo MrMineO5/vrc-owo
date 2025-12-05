@@ -111,12 +111,14 @@ const SEND_INTERVAL: u64 = 10;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let muscle_mappings: Arc<Mutex<[(&str, Muscle, u8, u8, u8); 10]>> = Arc::new(Mutex::new(
-        if let Some(config) = load_config() {
+    let muscle_mappings: Arc<Mutex<[(&str, Muscle, u8, u8, u8); 10]>> =
+        Arc::new(Mutex::new(if let Some(config) = load_config() {
             let mut mappings = default_muscle_mappings();
             for muscle_config in config.muscles {
-                if let Some((_, _, intensity_touch, intensity_impact, intensity_stab)) = 
-                    mappings.iter_mut().find(|(name, _, _, _, _)| *name == muscle_config.name) {
+                if let Some((_, _, intensity_touch, intensity_impact, intensity_stab)) = mappings
+                    .iter_mut()
+                    .find(|(name, _, _, _, _)| *name == muscle_config.name)
+                {
                     *intensity_touch = muscle_config.intensity_touch;
                     *intensity_impact = muscle_config.intensity_impact;
                     *intensity_stab = muscle_config.intensity_stab;
@@ -125,40 +127,53 @@ async fn main() -> std::io::Result<()> {
             mappings
         } else {
             default_muscle_mappings()
-        }
-    ));
-    
-    fn get_muscle_for_parameter(parameter: &str, state: &MuscleState, mappings: &[(&str, Muscle, u8, u8, u8); 10]) -> Option<MuscleWithIntensity> {
-        mappings.iter()
-                .find(|(param, _, _, _, _)| *param == parameter)
-                .map(|(_, muscle, intensity_touch, intensity_impact, intensity_stab)| {
+        }));
+
+    fn get_muscle_for_parameter(
+        parameter: &str,
+        state: &MuscleState,
+        mappings: &[(&str, Muscle, u8, u8, u8); 10],
+    ) -> Option<MuscleWithIntensity> {
+        mappings
+            .iter()
+            .find(|(param, _, _, _, _)| *param == parameter)
+            .map(
+                |(_, muscle, intensity_touch, intensity_impact, intensity_stab)| {
                     let intensity = match state.interaction_type {
                         InteractionType::Touch => *intensity_touch as f32 * state.depth,
                         InteractionType::Impact => *intensity_impact as f32 * state.velocity / 5.0,
                         InteractionType::Stab => *intensity_stab as f32,
                     };
                     MuscleWithIntensity::new(*muscle, intensity as u8)
-                })
+                },
+            )
     }
 
-    fn get_intensity(parameter: &str, state: &MuscleState, mappings: &[(&str, Muscle, u8, u8, u8); 10]) -> Option<u8> {
-        mappings.iter()
-                .find(|(param, _, _, _, _)| *param == parameter)
-                .map(|(_, _, intensity_touch, intensity_impact, intensity_stab)| {
+    fn get_intensity(
+        parameter: &str,
+        state: &MuscleState,
+        mappings: &[(&str, Muscle, u8, u8, u8); 10],
+    ) -> Option<u8> {
+        mappings
+            .iter()
+            .find(|(param, _, _, _, _)| *param == parameter)
+            .map(
+                |(_, _, intensity_touch, intensity_impact, intensity_stab)| {
                     let intensity = match state.interaction_type {
                         InteractionType::Touch => *intensity_touch as f32 * state.depth,
                         InteractionType::Impact => *intensity_impact as f32 * state.velocity / 5.0,
                         InteractionType::Stab => *intensity_stab as f32,
                     };
                     intensity as u8
-                })
+                },
+            )
     }
-    
+
     fn get_supported_parameters(mappings: &[(&str, Muscle, u8, u8, u8); 10]) -> Vec<String> {
         mappings
-                .iter()
-                .map(|(param, _, _, _, _)| param.to_string())
-                .collect()
+            .iter()
+            .map(|(param, _, _, _, _)| param.to_string())
+            .collect()
     }
 
     // Create a UDP socket to listen for OSC messages
@@ -168,7 +183,7 @@ async fn main() -> std::io::Result<()> {
     let contact_states = Arc::new(Mutex::new(HashMap::new()));
     let needs_connect = Arc::new(Mutex::new(true));
     let toggle_states = Arc::new(Mutex::new(HashMap::<String, bool>::new()));
-    
+
     // Initialize all supported parameters to false
     {
         let mut states = contact_states.lock().unwrap();
@@ -184,7 +199,7 @@ async fn main() -> std::io::Result<()> {
     let toggle_states_clone = toggle_states.clone();
     thread::spawn(move || {
         let client = Client::new(GameAuth::default());
-        
+
         let mut i = 0;
         loop {
             {
@@ -200,18 +215,18 @@ async fn main() -> std::io::Result<()> {
 
                 // Create a list of active muscles
                 let mut states = contact_states_clone.lock().unwrap();
-                let priority_type = states.iter()
+                let priority_type = states
+                    .iter()
                     .map(|(_, state)| state.interaction_type)
-                    .max().unwrap_or(InteractionType::Touch);
+                    .max()
+                    .unwrap_or(InteractionType::Touch);
 
                 let mappings = &muscle_mappings_clone.lock().unwrap();
                 let active_muscles: Vec<MuscleWithIntensity> = states
                     .iter()
                     .filter(|(_, state)| state.interaction_type == priority_type)
                     .filter(|(_, state)| state.should_send_sensation())
-                    .filter_map(|(param, state)| {
-                        get_muscle_for_parameter(param, state, mappings)
-                    })
+                    .filter_map(|(param, state)| get_muscle_for_parameter(param, state, mappings))
                     .collect();
 
                 let mut highest_intensity = 0;
@@ -230,32 +245,74 @@ async fn main() -> std::io::Result<()> {
 
                 // Only send if there are active muscles
                 let sensation = match priority_type {
-                    InteractionType::Touch => Sensation::micro_sensation(100, 0.3f32, 100, 0f32, 0f32, 0f32, "".to_string()),
-                    InteractionType::Impact => Sensation::micro_sensation(100, 0.2f32, 100, 0f32, 0f32, 0f32, "".to_string()),
-                    InteractionType::Stab => Sensation::micro_sensation(60, 0.3f32, 100, 0f32, 0f32, 0f32, "".to_string()),
+                    InteractionType::Touch => Sensation::micro_sensation(
+                        100,
+                        0.3f32,
+                        100,
+                        0f32,
+                        0f32,
+                        0f32,
+                        "".to_string(),
+                    ),
+                    InteractionType::Impact => Sensation::micro_sensation(
+                        100,
+                        0.2f32,
+                        100,
+                        0f32,
+                        0f32,
+                        0f32,
+                        "".to_string(),
+                    ),
+                    InteractionType::Stab => Sensation::micro_sensation(
+                        60,
+                        0.3f32,
+                        100,
+                        0f32,
+                        0f32,
+                        0f32,
+                        "".to_string(),
+                    ),
                 };
 
                 i += 1;
                 if !active_muscles.is_empty() {
                     let toggle_states = toggle_states_clone.lock().unwrap();
                     let enabled = toggle_states.get("chatbox").unwrap_or(&false);
-                    if *enabled && (i % SEND_INTERVAL == 0 || priority_type != InteractionType::Touch) {
-                        let message = format!("Type: {:#?}\nActive muscles: {}\nIntensity: {}", priority_type, active_muscles.len(), highest_intensity);
+                    if *enabled
+                        && (i % SEND_INTERVAL == 0 || priority_type != InteractionType::Touch)
+                    {
+                        let message = format!(
+                            "Type: {:#?}\nActive muscles: {}\nIntensity: {}",
+                            priority_type,
+                            active_muscles.len(),
+                            highest_intensity
+                        );
                         println!("{}", message);
 
-                        send_socket.send_to(rosc::encoder::encode(&OscPacket::Message(OscMessage {
-                                addr: "/chatbox/input".to_string(),
-                                args: (vec![OscType::String(message.to_string()), OscType::Bool(true), OscType::Bool(false)]) 
-                        })).unwrap().as_slice(), ("127.0.0.1", 9000)).unwrap();
+                        send_socket
+                            .send_to(
+                                rosc::encoder::encode(&OscPacket::Message(OscMessage {
+                                    addr: "/chatbox/input".to_string(),
+                                    args: (vec![
+                                        OscType::String(message.to_string()),
+                                        OscType::Bool(true),
+                                        OscType::Bool(false),
+                                    ]),
+                                }))
+                                .unwrap()
+                                .as_slice(),
+                                ("127.0.0.1", 9000),
+                            )
+                            .unwrap();
                     }
 
                     client.send_sensation(Sensation::with_muscles(sensation, active_muscles));
                 } /* else if i % SEND_INTERVAL == 0 {
-                    let message = format!("Haptic vest waiting");
-                    send_socket.send_to(rosc::encoder::encode(&OscPacket::Message(OscMessage {
-                                addr: "/chatbox/input".to_string(),
-                                args: (vec![OscType::String(message.to_string()), OscType::Bool(true), OscType::Bool(false)]) 
-                        })).unwrap().as_slice(), ("127.0.0.1", 9000)).unwrap();
+                let message = format!("Haptic vest waiting");
+                send_socket.send_to(rosc::encoder::encode(&OscPacket::Message(OscMessage {
+                addr: "/chatbox/input".to_string(),
+                args: (vec![OscType::String(message.to_string()), OscType::Bool(true), OscType::Bool(false)])
+                })).unwrap().as_slice(), ("127.0.0.1", 9000)).unwrap();
                 } */
             }
 
@@ -264,7 +321,8 @@ async fn main() -> std::io::Result<()> {
     });
 
     // Spawn a thread to handle OSC messages
-    let contact_states_clone: Arc<Mutex<HashMap<String, MuscleState>>> = Arc::clone(&contact_states);
+    let contact_states_clone: Arc<Mutex<HashMap<String, MuscleState>>> =
+        Arc::clone(&contact_states);
     let toggle_states_clone: Arc<Mutex<HashMap<String, bool>>> = Arc::clone(&toggle_states);
 
     let vrchat_osc = VRChatOSC::new().await.unwrap();
@@ -318,7 +376,9 @@ async fn main() -> std::io::Result<()> {
                                     if current_state.velocity < velocity {
                                         current_state.velocity = velocity;
                                     }
-                                } else if current_state.interaction_type != InteractionType::Impact && current_state.velocity > 0.0 {
+                                } else if current_state.interaction_type != InteractionType::Impact
+                                    && current_state.velocity > 0.0
+                                {
                                     current_state.interaction_type = InteractionType::Impact;
                                 }
                             }
@@ -350,29 +410,40 @@ async fn main() -> std::io::Result<()> {
                 }
             }
         })
-        .await.unwrap();
+        .await
+        .unwrap();
 
     // Start the UI
     let app = App::new().unwrap();
     {
         let mappings = muscle_mappings.lock().unwrap();
-        app.set_muscles(mappings.iter().map(|(name, _, intensity_touch, intensity_impact, intensity_stab)| {
-            MuscleData {
-                name: name.to_string().into(),
-                intensities: MuscleIntensities {
-                    touch: *intensity_touch as i32,
-                    impact: *intensity_impact as i32,
-                    stab: *intensity_stab as i32,
-                },
-            }
-        }).collect::<Vec<MuscleData>>().as_slice().into());
+        app.set_muscles(
+            mappings
+                .iter()
+                .map(
+                    |(name, _, intensity_touch, intensity_impact, intensity_stab)| MuscleData {
+                        name: name.to_string().into(),
+                        intensities: MuscleIntensities {
+                            touch: *intensity_touch as i32,
+                            impact: *intensity_impact as i32,
+                            stab: *intensity_stab as i32,
+                        },
+                    },
+                )
+                .collect::<Vec<MuscleData>>()
+                .as_slice()
+                .into(),
+        );
     }
     let app_handle = app.as_weak();
     app.on_update(move || {
         let app = app_handle.unwrap();
         let mut mappings = muscle_mappings.lock().unwrap();
         app.get_muscles().iter().for_each(|muscle| {
-            if let Some((_, _, intensity_touch, intensity_impact, intensity_stab)) = mappings.iter_mut().find(|(name, _, _, _, _)| *name == muscle.name.as_str()) {
+            if let Some((_, _, intensity_touch, intensity_impact, intensity_stab)) = mappings
+                .iter_mut()
+                .find(|(name, _, _, _, _)| *name == muscle.name.as_str())
+            {
                 *intensity_touch = muscle.intensities.touch as u8;
                 *intensity_impact = muscle.intensities.impact as u8;
                 *intensity_stab = muscle.intensities.stab as u8;
@@ -381,15 +452,20 @@ async fn main() -> std::io::Result<()> {
 
         // Save config after update
         let config = Config {
-            muscles: mappings.iter().map(|(name, muscle, intensity_touch, intensity_impact, intensity_stab)| {
-                MuscleConfig {
-                    name: name.to_string(),
-                    muscle: format!("{:?}", muscle),
-                    intensity_touch: *intensity_touch,
-                    intensity_impact: *intensity_impact,
-                    intensity_stab: *intensity_stab,
-                }
-            }).collect(),
+            muscles: mappings
+                .iter()
+                .map(
+                    |(name, muscle, intensity_touch, intensity_impact, intensity_stab)| {
+                        MuscleConfig {
+                            name: name.to_string(),
+                            muscle: format!("{:?}", muscle),
+                            intensity_touch: *intensity_touch,
+                            intensity_impact: *intensity_impact,
+                            intensity_stab: *intensity_stab,
+                        }
+                    },
+                )
+                .collect(),
         };
         if let Err(e) = save_config(&config) {
             println!("Error saving config: {}", e);
@@ -398,5 +474,6 @@ async fn main() -> std::io::Result<()> {
     app.on_connect(move || {
         *needs_connect.lock().unwrap() = true;
     });
-    app.run().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+    app.run()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
 }
