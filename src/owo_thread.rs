@@ -35,7 +35,7 @@ pub fn start_owo_thread(
                         if let Some(ip_str) = ip {
                             println!("Connecting to specific IP: {}", ip_str);
                             // Try to connect to the specific IP
-                            client.connect(ip_str);
+                            client.connect((ip_str, 54020));
                         } else {
                             // Use auto-connect if no specific IP is provided
                             client.auto_connect();
