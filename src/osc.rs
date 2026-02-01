@@ -1,5 +1,5 @@
 use crate::muscle::{InteractionType, MuscleState};
-use rosc::{OscMessage, OscPacket, OscType};
+use vrchat_osc::rosc::{OscMessage, OscPacket, OscType};
 use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::sync::{Arc, Mutex};
@@ -13,7 +13,7 @@ pub async fn setup_osc_listener(
     contact_states: Arc<Mutex<HashMap<String, MuscleState>>>,
     toggle_states: Arc<Mutex<HashMap<String, bool>>>,
 ) -> Result<Arc<VRChatOSC>, Box<dyn std::error::Error>> {
-    let vrchat_osc = VRChatOSC::new().await?;
+    let vrchat_osc = VRChatOSC::new(None).await?;
 
     let root_node = OscRootNode::new().with_avatar();
     let toggle_states_clone = toggle_states.clone();
@@ -131,7 +131,7 @@ pub fn create_send_socket() -> std::io::Result<UdpSocket> {
 
 pub fn send_chatbox_message(socket: &UdpSocket, message: &str) -> std::io::Result<()> {
     socket.send_to(
-        rosc::encoder::encode(&OscPacket::Message(OscMessage {
+        vrchat_osc::rosc::encoder::encode(&OscPacket::Message(OscMessage {
             addr: "/chatbox/input".to_string(),
             args: (vec![
                 OscType::String(message.to_string()),
