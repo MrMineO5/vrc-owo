@@ -50,7 +50,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y mingw-w64 fontconfig
+        sudo apt-get install -y mingw-w64 libfontconfig1-dev
         rustup target add ${{ matrix.BUILD_TARGET }}
     - name: Build
       run: cargo build --release --target ${{ matrix.BUILD_TARGET }}
