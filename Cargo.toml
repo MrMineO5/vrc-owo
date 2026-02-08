@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 owo-skin-rs = "1.0.0"
-vrchat_osc = "2.0"
+vrchat_osc = "2.2"
 slint = "1.11.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
