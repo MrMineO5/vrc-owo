@@ -25,25 +25,27 @@ pub fn start_owo_thread(
         let mut i = 0;
         loop {
             {
-                {
-                    let mut needs_connect = needs_connect.lock().unwrap();
-                    if *needs_connect {
-                        println!("Connecting to OWO Application");
+                let needs_connect_state = *needs_connect.lock().unwrap();
+                if needs_connect_state {
+                    println!("Connecting to OWO Application");
 
-                        // Check if we have a specific IP to connect to
-                        let ip = ip_address.lock().unwrap().clone();
-                        if let Some(ip_str) = ip {
-                            println!("Connecting to specific IP: {}", ip_str);
-                            // Try to connect to the specific IP
-                            client.connect((ip_str, 54020));
-                        } else {
-                            // Use auto-connect if no specific IP is provided
-                            client.auto_connect();
-                        }
+                    // Check if we have a specific IP to connect to
+                    let ip = ip_address.lock().unwrap().clone();
+                    let success = if let Some(ip_str) = ip {
+                        println!("Connecting to specific IP: {}", ip_str);
+                        // Try to connect to the specific IP
+                        client.connect_non_blocking(&(ip_str, 54020))
+                    } else {
+                        // Use auto-connect if no specific IP is provided
+                        client.auto_connect_non_blocking()
+                    };
 
-                        *needs_connect = false;
-                        println!("Connected to OWO Application");
+                    if !success {
+                        continue;
                     }
+
+                    *needs_connect.lock().unwrap() = false;
+                    println!("Connected to OWO Application");
                 }
 
                 // Create a list of active muscles

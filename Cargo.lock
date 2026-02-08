@@ -3555,9 +3555,9 @@ dependencies = [
 
 [[package]]
 name = "owo-skin-rs"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ebb753cb1b681d8d788dd4190db076780f1c0f59dfb13192b190270db3ed847"
+checksum = "fab52828b5a06f7b507bc10a9a1f38a68c293a287aa549d8df7e10fe7b614f7c"
 
 [[package]]
 name = "parking"
@@ -5332,7 +5332,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vrc-owo"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "dirs",
  "owo-skin-rs",

@@ -1,10 +1,10 @@
 [package]
 name = "vrc-owo"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2024"
 
 [dependencies]
-owo-skin-rs = "1.0.0"
+owo-skin-rs = "1.0.1"
 vrchat_osc = "2.2"
 slint = "1.11.0"
 serde = { version = "1.0", features = ["derive"] }
